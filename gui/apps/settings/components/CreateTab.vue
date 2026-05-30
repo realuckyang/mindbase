@@ -31,7 +31,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import agentsSource from '../../../../../AGENTS.md?raw'
+import agentsSource from '../../../../AGENTS.md?raw'
 
 const userIdea = ref('')
 const copied   = ref(false)
