@@ -46,6 +46,13 @@
             <div class="max-w-[85%] rounded-2xl rounded-br-sm bg-nt px-3.5 py-2.5 text-[15px] leading-relaxed text-white whitespace-pre-wrap break-words">{{ item.content }}</div>
           </div>
 
+          <div v-else-if="item.kind === 'compaction'" class="flex justify-start">
+            <details class="max-w-[90%] flex-1 rounded-md border border-nt-divider bg-nt-hover/50 overflow-hidden">
+              <summary class="cursor-pointer px-3 py-2 text-xs text-nt-muted">上下文压缩</summary>
+              <pre class="border-t border-nt-divider bg-white px-3 py-2 text-[12px] leading-relaxed text-nt whitespace-pre-wrap break-words">{{ item.content }}</pre>
+            </details>
+          </div>
+
           <!-- 工具调用块 -->
           <div v-else-if="item.kind === 'tool'" class="flex justify-start">
             <details class="max-w-[90%] flex-1 rounded-md border border-nt-divider bg-nt-hover/50 overflow-hidden" :open="item.open ?? false">
@@ -203,7 +210,7 @@ function pushFromMessage(msg, dest) {
   const out = dest || turns.value
   if (!msg || !msg.role) return
   if (msg.role === 'user') {
-    out.push({ kind: 'user', content: String(msg.content || '') })
+    out.push({ kind: msg._meta?.kind === 'compaction' ? 'compaction' : 'user', content: String(msg.content || '') })
   } else if (msg.role === 'assistant') {
     if (Array.isArray(msg.tool_calls) && msg.tool_calls.length) {
       if (msg.content) out.push({ kind: 'assistant', content: String(msg.content) })
@@ -253,7 +260,7 @@ async function loadInitial() {
     const { messages: rows } = await api.get(`/api/chat/messages?limit=${PAGE_SIZE}`)
     if (rows.length) {
       oldestId.value = rows[0].id
-      for (const r of rows) pushFromMessage(r.message)
+      for (const r of rows) pushFromMessage({ ...r.message, _meta: r.meta })
     }
     if (rows.length < PAGE_SIZE) hasMoreHistory.value = false
     stick.value = true
@@ -275,7 +282,7 @@ async function loadOlder() {
     if (rows.length) {
       oldestId.value = rows[0].id
       const prepend = []
-      for (const r of rows) pushFromMessage(r.message, prepend)
+      for (const r of rows) pushFromMessage({ ...r.message, _meta: r.meta }, prepend)
       turns.value = [...prepend, ...turns.value]
     }
     if (rows.length < PAGE_SIZE) hasMoreHistory.value = false
@@ -292,7 +299,6 @@ async function ask(preset) {
   const content = (preset ?? draft.value).trim()
   if (!content || streaming.value || !aiReady.value) return
 
-  turns.value.push({ kind: 'user', content })
   draft.value = ''
   if (inputEl.value) inputEl.value.style.height = 'auto'
 
@@ -344,15 +350,17 @@ async function ask(preset) {
           let evt
           try { evt = JSON.parse(payload) } catch { continue }
 
-          if (evt.type === 'delta' && typeof evt.delta === 'string') {
+          if (evt.type === 'message' && typeof evt.content === 'string') {
             const a = ensureAssistant()
-            a.content += evt.delta
-          } else if (evt.type === 'assistant_tool_calls' && evt.message?.tool_calls) {
+            a.content += evt.content
+          } else if (evt.type === 'input' && evt.message?.role === 'user') {
+            turns.value.push({ kind: evt.kind === 'compaction' ? 'compaction' : 'user', content: String(evt.message.content || '') })
+          } else if (evt.type === 'tool_calls' && Array.isArray(evt.toolCalls)) {
             // 收到这条意味着该 assistant 文本段结束(模型转去调工具),
             // 给所有 tool_calls 创建占位卡片
             if (currentAssistant) currentAssistant.streaming = false
             currentAssistant = null
-            for (const tc of evt.message.tool_calls) {
+            for (const tc of evt.toolCalls) {
               let argsObj = {}
               try { argsObj = JSON.parse(tc.function?.arguments || '{}') } catch {}
               const turn = reactive({
@@ -368,12 +376,16 @@ async function ask(preset) {
               turns.value.push(turn)
               toolMap.set(tc.id, turn)
             }
-          } else if (evt.type === 'tool_result' && evt.message?.tool_call_id) {
-            const turn = toolMap.get(evt.message.tool_call_id)
-            if (turn) {
-              turn.result = evt.message.content
-              const isError = /^tool error:|^\[?error\]?:/i.test(String(evt.message.content || '').trim())
-              turn.status = isError ? 'error' : 'done'
+          } else if (evt.type === 'tool_results' && Array.isArray(evt.results)) {
+            for (const result of evt.results) {
+              const toolCallId = result.toolCallId || result.id || result.message?.tool_call_id
+              const content = result.content ?? result.message?.content ?? ''
+              const turn = toolMap.get(toolCallId)
+              if (turn) {
+                turn.result = content
+                const isError = /^tool error:|^\[?error\]?:/i.test(String(content || '').trim())
+                turn.status = isError ? 'error' : 'done'
+              }
             }
           } else if (evt.type === 'done') {
             if (currentAssistant) currentAssistant.streaming = false

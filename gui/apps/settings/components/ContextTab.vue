@@ -2,21 +2,16 @@
   <section class="mt-6 space-y-5">
     <div v-if="loading" class="py-6 text-sm text-nt-soft">加载中…</div>
     <template v-else>
-      <Field label="历史轮数" hint="每次调用送给模型的最近 user 回合数">
-        <div class="inline-flex overflow-hidden rounded-md border border-nt-divider">
-          <button
-            v-for="opt in roundOptions"
-            :key="opt"
-            type="button"
-            :class="[
-              'px-4 py-1.5 text-sm transition',
-              Number(form.ai_context_rounds) === opt
-                ? 'bg-nt text-white'
-                : 'text-nt-muted hover:bg-nt-hover',
-            ]"
-            @click="form.ai_context_rounds = opt"
-          >{{ opt }}</button>
-        </div>
+      <Field label="触发压缩 total_tokens" hint="上一次模型调用的 total_tokens 达到该值时,下一次调用前先压缩历史。0 表示关闭。">
+        <input v-model.number="form.compressThreshold" type="number" min="0" step="100" class="mb-input" />
+      </Field>
+
+      <Field label="工具结果最大字符数" hint="每个工具返回给模型和历史的最大字符数。">
+        <input v-model.number="form.toolResultMaxChars" type="number" min="1000" max="50000" step="1000" class="mb-input" />
+      </Field>
+
+      <Field label="压缩提示词" hint="用于把旧消息压缩成后续上下文。">
+        <textarea v-model="form.compactPrompt" rows="8" class="mb-input font-mono text-[13px] leading-relaxed" placeholder="你负责压缩聊天上下文..."></textarea>
       </Field>
 
       <SaveBar :busy="busy" :saved="saved" :error="error" @save="onSave" />
@@ -35,7 +30,6 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
 })
 
-const roundOptions = [30, 100, 500]
 const busy  = ref(false)
 const saved = ref(false)
 const error = ref('')
@@ -44,9 +38,13 @@ async function onSave() {
   busy.value = true; saved.value = false; error.value = ''
   try {
     const { settings } = await api.patch('/api/settings', {
-      ai_context_rounds: props.form.ai_context_rounds,
+      compressThreshold: props.form.compressThreshold,
+      compactPrompt: props.form.compactPrompt,
+      toolResultMaxChars: props.form.toolResultMaxChars,
     })
-    props.form.ai_context_rounds = settings.ai_context_rounds
+    props.form.compressThreshold = settings.compressThreshold
+    props.form.compactPrompt = settings.compactPrompt
+    props.form.toolResultMaxChars = settings.toolResultMaxChars
     saved.value = true
     setTimeout(() => { saved.value = false }, 1500)
   } catch (e) {

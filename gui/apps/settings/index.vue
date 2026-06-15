@@ -67,7 +67,9 @@ const form = reactive({
   ai_base_url: '',
   ai_api_key:  '',
   ai_model:    '',
-  ai_context_rounds: 100,
+  compressThreshold: 12000,
+  compactPrompt: '',
+  toolResultMaxChars: 12000,
   ai_system_prompt: '',
 })
 const defaultPrompt = ref('')
@@ -78,7 +80,9 @@ onMounted(async () => {
     form.ai_base_url       = settings.ai_base_url
     form.ai_api_key        = settings.ai_api_key
     form.ai_model          = settings.ai_model
-    form.ai_context_rounds = settings.ai_context_rounds || 100
+    form.compressThreshold = settings.compressThreshold || 12000
+    form.compactPrompt = settings.compactPrompt || ''
+    form.toolResultMaxChars = settings.toolResultMaxChars || 12000
     form.ai_system_prompt  = settings.ai_system_prompt || ''
     defaultPrompt.value    = settings.ai_system_prompt_default || ''
   } catch {} finally {
@@ -86,4 +90,3 @@ onMounted(async () => {
   }
 })
 </script>
-

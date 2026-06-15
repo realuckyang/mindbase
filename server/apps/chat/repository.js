@@ -45,15 +45,16 @@ export const ensureConversation = async (db, id, title = '') => {
 }
 
 // ---------- Messages ----------
-export const insertMessage = async (db, { conversationId, message, meta }) => {
+export const insertMessage = async (db, { conversationId, message, meta, usage }) => {
   const r = await db.prepare(
-    `INSERT INTO messages (conversation_id, message, meta)
-     VALUES (?1, ?2, ?3)
-     RETURNING id, conversation_id, message, meta, created_at`
+    `INSERT INTO messages (conversation_id, message, meta, usage)
+     VALUES (?1, ?2, ?3, ?4)
+     RETURNING id, conversation_id, message, meta, usage, created_at`
   ).bind(
     conversationId,
     typeof message === 'string' ? message : JSON.stringify(message),
     meta ? (typeof meta === 'string' ? meta : JSON.stringify(meta)) : null,
+    usage ? (typeof usage === 'string' ? usage : JSON.stringify(usage)) : null,
   ).first()
   // 顺手把 conversation 的 updated_at 推一下,失败也不阻塞
   try { await touchConversation(db, conversationId) } catch {}
@@ -63,7 +64,7 @@ export const insertMessage = async (db, { conversationId, message, meta }) => {
 // 全量(给 chat 调用送上下文用)
 export const listMessages = (db, conversationId) =>
   db.prepare(
-    `SELECT id, conversation_id, message, meta, created_at
+    `SELECT id, conversation_id, message, meta, usage, created_at
        FROM messages
       WHERE conversation_id = ?1
       ORDER BY id ASC`
@@ -74,14 +75,14 @@ export const listMessagesPage = async (db, conversationId, { before, limit = 30 
   const lim = Math.max(1, Math.min(200, Number(limit) || 30))
   const r = before
     ? await db.prepare(
-        `SELECT id, conversation_id, message, meta, created_at
+        `SELECT id, conversation_id, message, meta, usage, created_at
            FROM messages
           WHERE conversation_id = ?1 AND id < ?2
           ORDER BY id DESC
           LIMIT ?3`
       ).bind(conversationId, before, lim).all()
     : await db.prepare(
-        `SELECT id, conversation_id, message, meta, created_at
+        `SELECT id, conversation_id, message, meta, usage, created_at
            FROM messages
           WHERE conversation_id = ?1
           ORDER BY id DESC
@@ -89,4 +90,19 @@ export const listMessagesPage = async (db, conversationId, { before, limit = 30 
       ).bind(conversationId, lim).all()
   const rows = (r?.results || []).reverse()
   return rows
+}
+
+export const latestUsage = async (db, conversationId) => {
+  const row = await db.prepare(`SELECT usage FROM messages WHERE conversation_id = ?1 AND usage IS NOT NULL ORDER BY id DESC LIMIT 1`).bind(conversationId).first()
+  if (!row?.usage) return null
+  try { return JSON.parse(row.usage) } catch { return null }
+}
+
+export const latestCompaction = (db, conversationId) =>
+  db.prepare(`SELECT * FROM compactions WHERE conversation_id = ?1 ORDER BY end_message_id DESC, id DESC LIMIT 1`).bind(conversationId).first()
+
+export const insertCompaction = async (db, { conversationId, startMessageId, endMessageId, summary, tokens = 0 }) => {
+  const row = await db.prepare(`INSERT INTO compactions (conversation_id, start_message_id, end_message_id, summary, tokens) VALUES (?1, ?2, ?3, ?4, ?5) RETURNING id`)
+    .bind(conversationId, startMessageId, endMessageId, summary, tokens).first()
+  return Number(row?.id || 0)
 }

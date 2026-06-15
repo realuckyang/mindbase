@@ -13,23 +13,35 @@ const chat = async (messages, {
   toolContext = {},
   send = (_message) => {},
   signal,
-  maxRounds = 25,
   enableToolResultTruncate = true,
   toolResultMaxChars = 12e3,
+  beforeModelCall = null,
 } = {}) => {
-  const opts = normalizeChatOptions({ maxRounds, enableToolResultTruncate, toolResultMaxChars })
+  const opts = normalizeChatOptions({ enableToolResultTruncate, toolResultMaxChars })
   const workMessages = normalizeAgentMessages(messages)
   let round = 0
-  while (round++ < opts.maxRounds) {
+  let lastUsage = null
+  while (true) {
     if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    round += 1
+    if (beforeModelCall) {
+      const nextMessages = await beforeModelCall({ messages: workMessages, lastUsage, round })
+      if (Array.isArray(nextMessages)) {
+        workMessages.length = 0
+        workMessages.push(...normalizeAgentMessages(nextMessages))
+      }
+    }
     const payload = { model, messages: workMessages, tools }
     const message = await callLlmStream(apiUrl, apiKey, payload, {
       provider,
       signal,
       onDelta: (delta) => {
-        if (delta) send({ type: 'delta', delta })
+        if (delta) send({ type: 'message', content: delta })
       },
     })
+    const usage = message.usage || null
+    if (usage) lastUsage = usage
+    if (usage) send({ type: 'usage', usage })
 
     if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
       const assistantMsg = {
@@ -41,10 +53,7 @@ const chat = async (messages, {
         assistantMsg.reasoning_content = message.reasoning_content ?? ''
       }
       workMessages.push(assistantMsg)
-      send({ type: 'assistant_tool_calls', message: assistantMsg })
-      for (const toolCall of message.tool_calls) {
-        send({ type: 'tool_call', toolCall })
-      }
+      send({ type: 'tool_calls', toolCalls: message.tool_calls })
 
       const toolMessages = await runTools(message.tool_calls, toolContext, {
         enableToolResultTruncate: opts.enableToolResultTruncate,
@@ -52,8 +61,12 @@ const chat = async (messages, {
       })
       for (const tm of toolMessages) {
         workMessages.push(tm)
-        send({ type: 'tool_result', message: tm })
       }
+      send({ type: 'tool_results', results: toolMessages.map((message) => ({
+        toolCallId: message.tool_call_id,
+        content: message.content,
+        message,
+      })) })
       continue
     }
 
@@ -63,12 +76,9 @@ const chat = async (messages, {
       replyMsg.reasoning_content = message.reasoning_content ?? ''
     }
     workMessages.push(replyMsg)
-    send({ type: 'done', message: replyMsg })
+    send({ type: 'done' })
     return text
   }
-  const fallback = { role: 'assistant', content: '(达到最大轮次限制)' }
-  send({ type: 'done', message: fallback })
-  return fallback.content
 }
 
 export { chat }

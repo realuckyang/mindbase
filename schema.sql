@@ -27,9 +27,21 @@ CREATE TABLE messages (
   conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
   message         TEXT NOT NULL,
   meta            TEXT,
+  usage           TEXT,
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX idx_messages_conv ON messages(conversation_id, id);
+
+CREATE TABLE compactions (
+  id               INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id  TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  start_message_id INTEGER NOT NULL,
+  end_message_id   INTEGER NOT NULL,
+  summary          TEXT NOT NULL,
+  tokens           INTEGER NOT NULL DEFAULT 0,
+  created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX idx_compactions_conv ON compactions(conversation_id, id);
 
 -- ---- collab:外部 AI 接入授权 token ----
 CREATE TABLE tokens (

@@ -4,31 +4,32 @@ import { isAuthenticated } from "../../system/auth/index.js"
 import { getAllSettings, setSetting } from './repository.js'
 import { DEFAULT_SYSTEM_PROMPT } from '../../system/prompt/default.js'
 
-const ROUND_CHOICES = [30, 100, 500]
-const DEFAULT_ROUNDS = 100
-
 const WRITABLE = new Set([
   'ai_base_url',
   'ai_api_key',
   'ai_model',
-  'ai_context_rounds',
+  'compressThreshold',
+  'compactPrompt',
+  'toolResultMaxChars',
   'ai_system_prompt',
   'home_name',
   'home_icon',
   'home_cover',
 ])
 
-const normalizeRounds = (raw) => {
+const normalizeNumber = (raw, fallback, min = 0, max = Number.MAX_SAFE_INTEGER) => {
   const n = Number(raw)
-  if (!Number.isFinite(n)) return DEFAULT_ROUNDS
-  return ROUND_CHOICES.includes(n) ? n : DEFAULT_ROUNDS
+  if (!Number.isFinite(n)) return fallback
+  return Math.max(min, Math.min(max, n))
 }
 
 const serialize = (all) => ({
   ai_base_url:              all.ai_base_url || '',
   ai_api_key:               all.ai_api_key  || '',
   ai_model:                 all.ai_model    || '',
-  ai_context_rounds:        normalizeRounds(all.ai_context_rounds),
+  compressThreshold:        normalizeNumber(all.compressThreshold, 12000, 0),
+  compactPrompt:            all.compactPrompt || '',
+  toolResultMaxChars:       normalizeNumber(all.toolResultMaxChars, 12000, 1000, 50000),
   ai_system_prompt:         all.ai_system_prompt || '',
   ai_system_prompt_default: DEFAULT_SYSTEM_PROMPT,
 })
@@ -45,8 +46,10 @@ export const updateSettingsAction = async (request, env) => {
   for (const [k, v] of Object.entries(body)) {
     if (!WRITABLE.has(k)) continue
     let val
-    if (k === 'ai_context_rounds') {
-      val = String(normalizeRounds(v))
+    if (k === 'compressThreshold') {
+      val = String(normalizeNumber(v, 12000, 0))
+    } else if (k === 'toolResultMaxChars') {
+      val = String(normalizeNumber(v, 12000, 1000, 50000))
     } else {
       val = v === '' || v === null ? null : String(v)
     }

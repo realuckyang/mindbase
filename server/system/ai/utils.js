@@ -27,7 +27,6 @@ const parseBoundedInt = (name, value, min, max) => {
 }
 
 const normalizeChatOptions = (options = {}) => ({
-  maxRounds: parseBoundedInt('maxRounds', options.maxRounds, 1, 1e5),
   enableToolResultTruncate: options.enableToolResultTruncate !== false,
   toolResultMaxChars: parseBoundedInt('toolResultMaxChars', options.toolResultMaxChars, 1e3, 5e4),
 })
