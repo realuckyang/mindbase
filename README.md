@@ -142,7 +142,7 @@ mindbase/
       auth/  utils/  image/  基础设施
       apps/<name>/           系统应用（chat / collab / settings / user）
     collab/                  对外 AI 接入（openapi / mcp）
-  gui/
+  ui/
     main.js  App.vue  router.js  api.js
     apps/<name>/             用户应用 UI
     system/

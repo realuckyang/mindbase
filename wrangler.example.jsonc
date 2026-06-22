@@ -55,7 +55,7 @@
 
 	"r2_buckets": [
 		{
-			"binding": "IMAGES",
+			"binding": "R2",
 			"bucket_name": "mindbase"
 		}
 	],

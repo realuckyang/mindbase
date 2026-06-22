@@ -18,7 +18,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./gui', import.meta.url)),
+      '@': fileURLToPath(new URL('./ui', import.meta.url)),
     },
   },
   define: {

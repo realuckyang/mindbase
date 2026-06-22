@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// 把所有非核心应用从 server/apps/ 和 gui/apps/ 抽成 zip 包,放进 ../mindbase-site/public/packages/。
-// 每个 zip 含:server/{manifest,schema,repository,service,api}.js + gui/index.vue + README.md
+// 把所有非核心应用从 server/apps/ 和 ui/apps/ 抽成 zip 包,放进 ../mindbase-site/public/packages/。
+// 每个 zip 含:server/{manifest,schema,repository,service,api}.js + ui/index.vue + README.md
 //
 // 核心应用(不抽)= home + chat + collab + settings + create + layout
 // 基础设施(不算应用)= user / image / search / openapi
@@ -14,7 +14,7 @@ import JSZip from 'jszip'
 const here = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(here, '..')
 const SERVER_APPS = join(ROOT, 'server/apps')
-const GUI_APPS    = join(ROOT, 'gui/apps')
+const UI_APPS    = join(ROOT, 'ui/apps')
 const OUT_DIR     = join(ROOT, '..', 'mindbase-site/public/packages')
 const INDEX_FILE  = join(ROOT, '..', 'mindbase-site/public/packages.json')
 
@@ -97,8 +97,8 @@ ${(m.subpaths || []).length > 0 ? `专属子路径:\n${m.subpaths.map((s) => `- 
 AI 会读 \`AGENTS.md\` 的契约 + 这个包的文件,自动:
 
 1. 把 \`server/\` 下 5 个文件 copy 到 \`server/apps/${m.name}/\`
-2. 把 \`gui/index.vue\` copy 到 \`gui/apps/${m.name}/index.vue\`
-3. 在 \`server/router.js\`、\`server/apps/registry.js\`、\`gui/router.js\`、\`gui/lib/apps.js\` 加上注册
+2. 把 \`ui/index.vue\` copy 到 \`ui/apps/${m.name}/index.vue\`
+3. 在 \`server/router.js\`、\`server/apps/registry.js\`、\`ui/router.js\`、\`ui/lib/apps.js\` 加上注册
 4. 对 D1 跑这个包的 \`schema.sql\`(CREATE TABLE)
 5. \`npm run deploy\`
 
@@ -115,7 +115,7 @@ ${JSON.stringify({ name: m.name, icon: m.icon, label: m.label, category: m.categ
 
 for (const name of packageNames) {
   const serverDir = join(SERVER_APPS, name)
-  const guiFile   = join(GUI_APPS, name, 'index.vue')
+  const uiFile   = join(UI_APPS, name, 'index.vue')
 
   const manifest = readManifest(name)
   if (!manifest) {
@@ -135,22 +135,22 @@ for (const name of packageNames) {
     }
   }
 
-  // gui 文件 — 抽 gui/<name>/ 下的所有 .vue 文件 + components/ 子目录
-  const guiDir = join(GUI_APPS, name)
-  if (existsSync(guiDir)) {
-    for (const f of readdirSync(guiDir)) {
-      const full = join(guiDir, f)
+  // ui 文件 — 抽 ui/<name>/ 下的所有 .vue 文件 + components/ 子目录
+  const uiDir = join(UI_APPS, name)
+  if (existsSync(uiDir)) {
+    for (const f of readdirSync(uiDir)) {
+      const full = join(uiDir, f)
       if (statSync(full).isFile() && f.endsWith('.vue')) {
-        zip.file(`gui/${f}`, readFileSync(full))
+        zip.file(`ui/${f}`, readFileSync(full))
       }
     }
-    if (existsSync(join(guiDir, 'components'))) {
-      for (const f of readdirSync(join(guiDir, 'components'))) {
-        zip.file(`gui/components/${f}`, readFileSync(join(guiDir, 'components', f)))
+    if (existsSync(join(uiDir, 'components'))) {
+      for (const f of readdirSync(join(uiDir, 'components'))) {
+        zip.file(`ui/components/${f}`, readFileSync(join(uiDir, 'components', f)))
       }
     }
   } else {
-    console.warn(`[warn] ${name} — no gui/ dir`)
+    console.warn(`[warn] ${name} — no ui/ dir`)
   }
 
   // README

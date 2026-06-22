@@ -19,7 +19,7 @@
 |---|---|
 | DB 表 | `<name>_*`（公共表用裸名：settings / tokens / contexts / conversations / messages） |
 | 后端 | `server/apps/<name>/{manifest,repository,service,api}.js` |
-| 前端 | `gui/apps/<name>/index.vue` |
+| 前端 | `ui/apps/<name>/index.vue` |
 | HTTP | `/api/<name>` |
 
 `server/system/` 下只放纯基础设施：
@@ -32,11 +32,11 @@
 - `contexts/` —— 系统级置顶上下文
 - `image/`、`utils/` —— 通用基础设施
 
-启动器底部 dock 默认显示 `chat / collab / settings` 这 3 个 —— 在 `gui/system/lib/apps.js` 的 `DOCK` 常量里硬编码,未来可改成用户偏好。
+启动器底部 dock 默认显示 `chat / collab / settings` 这 3 个 —— 在 `ui/system/lib/apps.js` 的 `DOCK` 常量里硬编码,未来可改成用户偏好。
 
 ## 加一个新应用
 
-后端 `server/apps/<name>/{manifest,repository,service,api}.js` + 前端 `gui/apps/<name>/index.vue` + 在 `schema.sql` 的"应用"段加表（`<name>_*` 命名）+ 在 `server/apps/registry.js` 加一行 entry。
+后端 `server/apps/<name>/{manifest,repository,service,api}.js` + 前端 `ui/apps/<name>/index.vue` + 在 `schema.sql` 的"应用"段加表（`<name>_*` 命名）+ 在 `server/apps/registry.js` 加一行 entry。
 
 前端 `router.js` / `lib/apps.js` / `AppShell` 全部用 `import.meta.glob` 自动派生,不用手动碰。
 

@@ -76,15 +76,15 @@ function fixManifest(src) {
 }
 
 // ----------------------------------------------------------------
-// GUI 路径迁移
+// UI 路径迁移
 // ----------------------------------------------------------------
-const GUI_PATH_REPLACES = [
+const UI_PATH_REPLACES = [
   [`from '@/components/`,    `from '@/system/components/`],
   [`from '@/composables/`,   `from '@/system/composables/`],
   [`from '@/lib/`,           `from '@/system/lib/`],
 ]
 
-// 每个 apiX 的内联实现(从我们之前删除的 gui/api.js 复刻)。
+// 每个 apiX 的内联实现(从我们之前删除的 ui/api.js 复刻)。
 // 应用包 import { apiX } from '@/api' 后我们换成 import { api } + 这里的 const。
 const API_INLINES = {
   apiTodos: `const apiTodos = {
@@ -146,9 +146,9 @@ const API_INLINES = {
 }`,
 }
 
-function fixGui(src) {
+function fixUi(src) {
   let s = src
-  for (const [a, b] of GUI_PATH_REPLACES) s = s.split(a).join(b)
+  for (const [a, b] of UI_PATH_REPLACES) s = s.split(a).join(b)
 
   // apiX 引入:把命名 import 换成基础 import,然后把 inline const 推到所有 import 之后,
   // 避免插在 import 序列中间产生语法错。
@@ -198,9 +198,9 @@ for (const name of names) {
   tryFix('server/repository.js', fixServerService)  // 防止 repo 里也用了 lib
   tryFix('server/api.js',        fixServerService)
 
-  // gui/ 下所有 .vue / .js 递归(覆盖 index.vue 以外的拆分文件,如 notes 的 home/notebook/detail)
-  const guiDir = join(dir, 'gui')
-  if (existsSync(guiDir)) {
+  // ui/ 下所有 .vue / .js 递归(覆盖 index.vue 以外的拆分文件,如 notes 的 home/notebook/detail)
+  const uiDir = join(dir, 'ui')
+  if (existsSync(uiDir)) {
     const walk = (d) => {
       for (const f of readdirSync(d, { withFileTypes: true })) {
         const p = join(d, f.name)
@@ -208,7 +208,7 @@ for (const name of names) {
         else if (f.name.endsWith('.vue') || f.name.endsWith('.js')) {
           total++
           const before = readFileSync(p, 'utf8')
-          const after = fixGui(before)
+          const after = fixUi(before)
           if (after !== before) {
             writeFileSync(p, after)
             touched++
@@ -216,7 +216,7 @@ for (const name of names) {
         }
       }
     }
-    walk(guiDir)
+    walk(uiDir)
   }
 }
 console.log(`scanned ${total} files, modified ${touched}`)

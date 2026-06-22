@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "paths": {
-      "@/*": ["./gui/*"]
+      "@/*": ["./ui/*"]
     }
   },
   "exclude": ["node_modules", "dist"]

@@ -29,7 +29,7 @@
 AI 会依据主仓库根 `AGENTS.md` 的契约与本包文件,完成以下步骤:
 
 1. 将 `packages/recipes/server/` 下的 4 个文件(`manifest / repository / service / api`)复制到 `server/apps/recipes/`
-2. 将 `packages/recipes/gui/` 中的 `index.vue`(及可选的 `components/`)复制到 `gui/apps/recipes/`
+2. 将 `packages/recipes/ui/` 中的 `index.vue`(及可选的 `components/`)复制到 `ui/apps/recipes/`
 3. 把 `packages/recipes/schema.sql` 中的 `CREATE TABLE` 段追加到主仓库根 `schema.sql` 的"应用"段(主仓库 schema 集中在一个文件,作为单一事实源),并对 D1 执行新增的建表语句
 4. 在 `server/apps/registry.js` 的 `ENTRIES` 数组中追加一行 entry(`import` manifest 与 api)
 5. `npm run deploy`

@@ -28,11 +28,11 @@
   - 子路径:
   - (只有标准 CRUD)
 - **后端**:`server/{manifest,repository,service,api}.js` 四件套
-- **前端**:`gui/index.vue`(可能附 `gui/components/`)
+- **前端**:`ui/index.vue`(可能附 `ui/components/`)
 
 ## 修改
 
-装好后,代码位置在 `server/apps/travel/` 与 `gui/apps/travel/`。改完执行 `npm run deploy`。
+装好后,代码位置在 `server/apps/travel/` 与 `ui/apps/travel/`。改完执行 `npm run deploy`。
 
 **通用约定**(与主仓库根 `AGENTS.md` 一致):
 - 表名以 `app_travel_*` 为前缀;调整 DDL 时直接修改根 `schema.sql` 并重建数据库,数据迁移由重新建表承担
@@ -47,6 +47,6 @@
 
 ## 跟主仓库的关系
 
-本包是"独立分发的应用源",存放在主仓库的 `packages/travel/` 目录(便于查看与维护),并通过 [mindbase.me/apps/travel](https://mindbase.me/apps/travel) 以 zip 形式分发。安装即将 `packages/` 中的对应文件复制到 `server/apps/` 与 `gui/apps/` 的相应位置。
+本包是"独立分发的应用源",存放在主仓库的 `packages/travel/` 目录(便于查看与维护),并通过 [mindbase.me/apps/travel](https://mindbase.me/apps/travel) 以 zip 形式分发。安装即将 `packages/` 中的对应文件复制到 `server/apps/` 与 `ui/apps/` 的相应位置。
 
 本包是 MindBase 实例的组件,依赖 `system/`(auth / utils / image)、registry、`app_home_events` 表、`settings` 表等公共设施。开发时参考相邻的 `apps/home/` 即可对齐形态。

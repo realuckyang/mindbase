@@ -36,7 +36,7 @@ const SPECIFIC = {
 - 写入路径采用 upsert by date,用户同日多次记录会更新同一行。
 `,
   profile: `
-- \`block.content\` 会注入 chat 的 \`system prompt\`(由 \`gui/system/apps/chat\` 读取),内容直接进入 AI 上下文。block 保持精简,只放置关于用户的关键事实。
+- \`block.content\` 会注入 chat 的 \`system prompt\`(由 \`ui/system/apps/chat\` 读取),内容直接进入 AI 上下文。block 保持精简,只放置关于用户的关键事实。
 - \`sort_order\` 决定注入顺序,首要 block 承载最重要的事实(口味、工作风格、禁忌)。
 - 本应用属于"主动写给 AI 看"的隐私敏感应用,与密码箱(只读、不冒泡)的语义相对。
 `,
@@ -47,12 +47,12 @@ const SPECIFIC = {
 `,
   cards: `
 - **密码箱性质应用**:service 跳过 \`insertEvent\`,时间轴保持干净。
-- \`card_number\` 为完整卡号(明文)。展示层在 gui 中渲染为 \`**** **** **** 1234\`,API 返回完整明文,展示形态由前端决定。
+- \`card_number\` 为完整卡号(明文)。展示层在 ui 中渲染为 \`**** **** **** 1234\`,API 返回完整明文,展示形态由前端决定。
 - \`type\` 取值 \`'debit' | 'credit'\`。
 `,
   apikeys: `
 - **密码箱性质应用**:service 跳过 \`insertEvent\`,时间轴保持干净。
-- \`api_key\` 为完整 key(明文),展示层在 gui 中遮罩,API 返完整值。
+- \`api_key\` 为完整 key(明文),展示层在 ui 中遮罩,API 返完整值。
 - \`expire_at\` 为 \`YYYY-MM-DD\` 或 null;过期判断在前端完成,系统中无后台轮询。
 `,
   llms: `
@@ -112,11 +112,11 @@ ${tableLines}
   - 子路径:
 ${subpathLines}
 - **后端**:\`server/{manifest,repository,service,api}.js\` 四件套
-- **前端**:\`gui/index.vue\`(可能附 \`gui/components/\`)
+- **前端**:\`ui/index.vue\`(可能附 \`ui/components/\`)
 
 ## 修改
 
-装好后,代码位置在 \`server/apps/${m.name}/\` 与 \`gui/apps/${m.name}/\`。改完执行 \`npm run deploy\`。
+装好后,代码位置在 \`server/apps/${m.name}/\` 与 \`ui/apps/${m.name}/\`。改完执行 \`npm run deploy\`。
 
 **通用约定**(与主仓库根 \`AGENTS.md\` 一致):
 - 表名以 \`app_${m.name}_*\` 为前缀;调整 DDL 时直接修改根 \`schema.sql\` 并重建数据库,数据迁移由重新建表承担
@@ -131,7 +131,7 @@ ${specific}
 
 ## 跟主仓库的关系
 
-本包是"独立分发的应用源",存放在主仓库的 \`packages/${m.name}/\` 目录(便于查看与维护),并通过 [mindbase.me/apps/${m.name}](https://mindbase.me/apps/${m.name}) 以 zip 形式分发。安装即将 \`packages/\` 中的对应文件复制到 \`server/apps/\` 与 \`gui/apps/\` 的相应位置。
+本包是"独立分发的应用源",存放在主仓库的 \`packages/${m.name}/\` 目录(便于查看与维护),并通过 [mindbase.me/apps/${m.name}](https://mindbase.me/apps/${m.name}) 以 zip 形式分发。安装即将 \`packages/\` 中的对应文件复制到 \`server/apps/\` 与 \`ui/apps/\` 的相应位置。
 
 本包是 MindBase 实例的组件,依赖 \`system/\`(auth / utils / image)、registry、\`app_home_events\` 表、\`settings\` 表等公共设施。开发时参考相邻的 \`apps/home/\` 即可对齐形态。
 `
@@ -186,7 +186,7 @@ ${subpathSection}
 AI 会依据主仓库根 \`AGENTS.md\` 的契约与本包文件,完成以下步骤:
 
 1. 将 \`packages/${m.name}/server/\` 下的 4 个文件(\`manifest / repository / service / api\`)复制到 \`server/apps/${m.name}/\`
-2. 将 \`packages/${m.name}/gui/\` 中的 \`index.vue\`(及可选的 \`components/\`)复制到 \`gui/apps/${m.name}/\`
+2. 将 \`packages/${m.name}/ui/\` 中的 \`index.vue\`(及可选的 \`components/\`)复制到 \`ui/apps/${m.name}/\`
 3. 把 \`packages/${m.name}/schema.sql\` 中的 \`CREATE TABLE\` 段追加到主仓库根 \`schema.sql\` 的"应用"段(主仓库 schema 集中在一个文件,作为单一事实源),并对 D1 执行新增的建表语句
 4. 在 \`server/apps/registry.js\` 的 \`ENTRIES\` 数组中追加一行 entry(\`import\` manifest 与 api)
 5. \`npm run deploy\`

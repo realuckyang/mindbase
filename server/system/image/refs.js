@@ -10,9 +10,9 @@ export function extractR2Keys(content) {
 
 // 删除一组 R2 key。R2 binding 的 delete() 支持数组。
 export async function deleteR2Keys(env, keys) {
-  if (!env?.IMAGES || !keys || keys.length === 0) return
+  if (!env?.R2 || !keys || keys.length === 0) return
   try {
-    await env.IMAGES.delete(keys)
+    await env.R2.delete(keys)
   } catch (err) {
     console.error('r2 delete failed:', err?.message, keys.length, 'keys')
   }

@@ -4,7 +4,7 @@ import { checkAuth, useAuth } from '@/system/composables/useAuth'
 const DEFAULT_PATH = '/home'  // 登录后默认进的应用
 
 // 文件系统即路由表 —— `apps/<name>/index.vue` 自动映射到 `/<name>`。
-// 装一个新包，把目录丢进 `gui/apps/` 就有路由。
+// 装一个新包，把目录丢进 `ui/apps/` 就有路由。
 //
 // 例外:welcome(登录)、笔记子路由 —— 显式列出。
 const userPages = import.meta.glob('@/apps/*/index.vue')

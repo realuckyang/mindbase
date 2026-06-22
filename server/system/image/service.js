@@ -19,7 +19,7 @@ const bytesStreamOrBuffer = async (file) => {
 
 export const uploadImageAction = async (request, env) => {
   if (!(await isAuthenticated(request, env))) return fail('unauthorized', 401)
-  if (!env.IMAGES) return fail('r2_not_configured', 500)
+  if (!env.R2) return fail('r2_not_configured', 500)
 
   let formData
   try {
@@ -40,7 +40,7 @@ export const uploadImageAction = async (request, env) => {
   // 单机:key 不再带 user_id 路径,但保留 u/ 前缀和老 key 兼容
   const key = `u/${crypto.randomUUID()}.${ext}`
 
-  await env.IMAGES.put(key, await bytesStreamOrBuffer(file), {
+  await env.R2.put(key, await bytesStreamOrBuffer(file), {
     httpMetadata: { contentType: type },
   })
 
@@ -54,19 +54,19 @@ export const uploadImageAction = async (request, env) => {
 
 // GET /i/<key>  — key 是多段(u/<uuid>.<ext>;老 key 形如 u/<userId>/<uuid>.<ext>)
 export const serveImageAction = async (request, env, key) => {
-  if (!env.IMAGES) return new Response('r2_not_configured', { status: 500 })
+  if (!env.R2) return new Response('r2_not_configured', { status: 500 })
   if (!key || key.length > 256) return new Response('bad_key', { status: 400 })
 
   // If-None-Match 优先走条件请求,节省带宽
   const ifNoneMatch = request.headers.get('if-none-match')
   if (ifNoneMatch) {
-    const head = await env.IMAGES.head(key)
+    const head = await env.R2.head(key)
     if (head && head.httpEtag === ifNoneMatch) {
       return new Response(null, { status: 304, headers: { etag: head.httpEtag } })
     }
   }
 
-  const object = await env.IMAGES.get(key)
+  const object = await env.R2.get(key)
   if (!object) return new Response('not_found', { status: 404 })
 
   const headers = new Headers()
